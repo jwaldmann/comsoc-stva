@@ -5,19 +5,26 @@
 module Comsoc.STVA where
 
 import qualified Data.Map as M
+import qualified Data.Set as S
 import Control.Monad ( guard )
 import Data.List ( maximumBy, minimumBy, sortBy )
 import Data.Ord ( comparing )
 
 import Text.PrettyPrint.HughesPJ
 
+import Debug.Trace
+
 -- | preference is decreasing (head of vote is preference 1, etc.)
 type Vote a = [ a ]
 type Votes a = [ Vote a ]
 
+render_votes vs = vcat $ do
+    v <- vs
+    return $ hsep $ punctuate (text ">") $ map (text . show) v
+
 -- | describe election of one position
 stv :: ( Show a, Ord a ) => Votes a -> Doc
-stv vs = text ( "votes: " ++ show vs ) $$
+stv vs = text "votes: " $$ render_votes vs $$
     case major vs of
         Just top -> 
             text $ "majority: " ++ show top 
@@ -41,7 +48,7 @@ stv vs = text ( "votes: " ++ show vs ) $$
 major :: Ord a => Votes a -> Maybe a
 major vs = do
     let m = M.fromListWith (+) 
-          $ zip ( map head vs ) ( repeat 1 )
+          $ zip ( map head $ filter ( not . null ) vs ) ( repeat 1 )
     let ( top, count ) 
           = maximumBy ( comparing snd ) 
           $ M.toList m
@@ -53,7 +60,7 @@ remove :: Eq a => a -> Votes a -> Votes a
 remove c = map ( filter ( /= c ))
 
 -- | weakest candidates (several, in case of tie)
-weakest :: M.Map a [Integer] -> [a]
+weakest :: Show a => M.Map a [Integer] -> [a]
 weakest tab = 
     let inv_tab = M.fromListWith (++) $ do
             (c,xs) <- M.toList tab
@@ -65,6 +72,12 @@ weakest tab =
 
 table :: Ord a => Votes a -> M.Map a [Integer]
 table vs = M.fromListWith (zipWith (+)) $ do
+    let candidates = S.fromList $ concat vs
+        n = S.size candidates
+        default_preference = 1 + n
     v <- vs
-    (k,d) <- zip [ 0 .. ] v
-    return ( d, map ( \ e -> if d == e then 1 else 0 ) v )
+    let missing = S.difference candidates $ S.fromList v
+        patched = zip [ 0 .. ] v 
+          ++ zip (repeat default_preference) ( S.toList missing )
+    (k,d) <- patched
+    return ( d, map ( \ (k,e) -> if d == e then 1 else 0 ) patched )

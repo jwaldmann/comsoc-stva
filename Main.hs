@@ -16,10 +16,14 @@ main = do
 type Candidate = [String]
 
 votes :: Parser (Votes Candidate)
-votes = vote `sepBy` newline 
+votes = do
+    vs <- vote `sepBy` newline 
+    return $ filter (not . null) vs
 
 vote :: Parser (Vote Candidate)
-vote = candidate `sepBy` (char '>' >> spaces) 
+vote = candidate `sepBy` (char '>' >> blanks) 
 
 candidate :: Parser Candidate
-candidate = many1 $ noneOf  "> "  `endBy` spaces 
+candidate = (many1 $ noneOf "> \n\t")  `endBy1` blanks 
+
+blanks = many (char ' ')
