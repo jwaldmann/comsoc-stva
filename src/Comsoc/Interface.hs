@@ -1,15 +1,12 @@
-module Main where
+module Comsoc.Interface where
 
 import Comsoc.STVA
+
 import Text.Parsec
 import Text.Parsec.String
 
--- | read list of preferences from stdin
--- output a protocol of the vote transferral to stdout
-main :: IO ()
-main = do
-    input <- getContents
-    case runP votes () "/dev/stdin" input of
+evaluate input = 
+    case runP votes () "<input>" input of
         Left err -> print err
         Right vs -> print $ stv vs
 

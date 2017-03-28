@@ -12,8 +12,6 @@ import Data.Ord ( comparing )
 
 import Text.PrettyPrint.HughesPJ
 
-import Debug.Trace
-
 -- | preference is decreasing (head of vote is preference 1, etc.)
 type Vote a = [ a ]
 type Votes a = [ Vote a ]
